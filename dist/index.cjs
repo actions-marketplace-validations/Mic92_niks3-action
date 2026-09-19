@@ -22566,6 +22566,14 @@ function getBooleanInput(name, options) {
   throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
 }
+function setOutput(name, value) {
+  const filePath = process.env["GITHUB_OUTPUT"] || "";
+  if (filePath) {
+    return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
+  }
+  process.stdout.write(os5.EOL);
+  issueCommand("set-output", { name }, toCommandValue(value));
+}
 function setFailed(message) {
   process.exitCode = ExitCode.Failure;
   error(message);
@@ -23002,6 +23010,7 @@ async function setup() {
     case "none":
       break;
   }
+  setOutput("binary-dir", binDir);
   saveState("mode", mode);
   saveState("workDir", workDir);
   saveState("binDir", binDir);
@@ -23176,6 +23185,8 @@ exec ${q(hookBin)} send --socket ${q(socket)}
     await sleep(50);
   }
   info(`niks3-hook serve started (pid ${child2.pid}, socket ${socket})`);
+  setOutput("auth-token-script", tokenScript);
+  setOutput("socket", socket);
   saveState("daemonPid", String(child2.pid));
   saveState("daemonLog", logPath);
 }
@@ -23315,16 +23326,16 @@ async function resolveBinDir() {
     return path5.dirname(override);
   }
   const plat = platformTuple();
-  const cached = find("niks3", "v1.7.0", plat);
+  const cached = find("niks3", "v1.11.0", plat);
   if (cached) {
-    info(`Found cached niks3 ${"v1.7.0"} (${plat})`);
+    info(`Found cached niks3 ${"v1.11.0"} (${plat})`);
     return cached;
   }
-  const url = `https://github.com/Mic92/niks3/releases/download/${"v1.7.0"}/niks3_${plat}.tar.gz`;
-  info(`Downloading niks3 ${"v1.7.0"} from ${url}`);
+  const url = `https://github.com/Mic92/niks3/releases/download/${"v1.11.0"}/niks3_${plat}.tar.gz`;
+  info(`Downloading niks3 ${"v1.11.0"} from ${url}`);
   const tarball = await downloadTool(url);
   const extracted = await extractTar(tarball);
-  return cacheDir(extracted, "niks3", "v1.7.0", plat);
+  return cacheDir(extracted, "niks3", "v1.11.0", plat);
 }
 function platformTuple() {
   const sys = { linux: "Linux", darwin: "Darwin" };
